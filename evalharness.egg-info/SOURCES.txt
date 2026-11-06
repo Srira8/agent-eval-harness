@@ -1,9 +1,0 @@
-README.md
-pyproject.toml
-evalharness/__init__.py
-evalharness/types.py
-evalharness.egg-info/PKG-INFO
-evalharness.egg-info/SOURCES.txt
-evalharness.egg-info/dependency_links.txt
-evalharness.egg-info/top_level.txt
-tests/test_types.py
