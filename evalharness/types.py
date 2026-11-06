@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Callable
+from typing import Protocol, runtime_checkable
 
 
 @dataclass
@@ -31,3 +32,17 @@ class Task:
     expected_tools: set[str] = field(default_factory=set)
     forbidden_tools: set[str] = field(default_factory=set)
     max_steps: int = 6
+
+
+@runtime_checkable
+class ToolBox(Protocol):
+    schemas: list[dict]
+
+    def call(self, name: str, args: dict) -> tuple[str, bool]: ...
+
+
+@runtime_checkable
+class Agent(Protocol):
+    name: str
+
+    def run(self, task: Task, tools: ToolBox) -> Trace: ...
