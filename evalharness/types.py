@@ -32,6 +32,7 @@ class Task:
     expected_tools: set[str] = field(default_factory=set)
     preferred_tools: set[str] = field(default_factory=set)
     forbidden_tools: set[str] = field(default_factory=set)
+    allow_any_tools: bool = False
     max_steps: int = 6
 
 

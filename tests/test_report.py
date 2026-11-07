@@ -54,3 +54,12 @@ def test_import_does_not_create_files(tmp_path):
     import evalharness.__main__  # noqa: F401 — just importing
     importlib.import_module("evalharness.__main__")
     assert list(tmp_path.iterdir()) == []
+
+
+def test_main_tasks_filter(tmp_path):
+    from evalharness.__main__ import main
+    out = str(tmp_path / "r")
+    main(["--agent", "mock", "--trials", "1", "--seed", "0", "--tasks", "arith", "--out", out])
+    data = json.load(open(f"{out}.json"))
+    assert len(data["runs"]) == 1
+    assert data["runs"][0]["task_id"] == "arith"

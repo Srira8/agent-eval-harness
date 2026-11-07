@@ -22,6 +22,8 @@ def main(argv: list[str] | None = None) -> None:
                         help="USD per million input tokens")
     parser.add_argument("--price-out", type=float, default=15.0, dest="price_out",
                         help="USD per million output tokens")
+    parser.add_argument("--tasks", nargs="+", default=None, metavar="TASK_ID",
+                        help="Run only these task IDs (default: all supported)")
     args = parser.parse_args(argv)
 
     if args.agent == "claude":
@@ -40,6 +42,12 @@ def main(argv: list[str] | None = None) -> None:
         skipped = [t.id for t in TASKS if t.id not in agent.SUPPORTED_TASK_IDS]
         if skipped:
             print(f"Note: skipping {len(skipped)} task(s) not supported by mock agent: {', '.join(skipped)}")
+
+    if args.tasks:
+        tasks_to_run = [t for t in tasks_to_run if t.id in set(args.tasks)]
+        if not tasks_to_run:
+            print("Error: no matching tasks found for the specified --tasks.", file=sys.stderr)
+            sys.exit(1)
 
     results = run_suite(
         agent, tasks_to_run, DefaultToolBox,

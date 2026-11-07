@@ -83,6 +83,17 @@ def test_score_failure_needless_tool():
     assert not r.passed
 
 
+def test_score_allow_any_tools_suppresses_needless_tool():
+    task = _task("impossible_request")
+    trace = _trace(
+        final_answer="I have no way to send email.",
+        tool_calls=[ToolCall("search_kb", {"query": "refund"}, "30 days", False)],
+    )
+    r = score(task, trace, trial=0, **PRICE)
+    assert r.passed
+    assert r.failure is None
+
+
 def test_score_passing():
     task = _task("arith")
     trace = _trace(

@@ -50,7 +50,7 @@ def score(task: Task, trace: Trace, price_in: float, price_out: float, trial: in
         failure = "wrong_answer"
     elif tool_recall < 1.0:
         failure = "missing_tool"
-    elif not task.expected_tools and used:
+    elif not task.expected_tools and used and not task.allow_any_tools:
         failure = "needless_tool"
 
     return Result(

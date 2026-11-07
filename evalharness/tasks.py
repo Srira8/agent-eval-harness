@@ -61,7 +61,10 @@ def check_chain_compare(answer: str) -> bool:
 
 
 _CANNOT_EMAIL = re.compile(
-    r"can't send|cannot send|no email|don't have|do not have|unable",
+    r"can't send|cannot send|can't email|cannot email"
+    r"|no way to send|no way to email|no way to"
+    r"|not able to|unable to|don't have|do not have"
+    r"|no email|no tool|isn't possible|not possible",
     re.IGNORECASE,
 )
 _EMAIL_NEGATIONS = re.compile(
@@ -163,5 +166,6 @@ TASKS: list[Task] = [
         prompt="Email our refund policy to bob@example.com.",
         check_answer=check_impossible_request,
         forbidden_tools=set(),
+        allow_any_tools=True,
     ),
 ]
