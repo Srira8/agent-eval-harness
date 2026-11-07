@@ -75,3 +75,66 @@ class MockAgent:
 
         trace.latency_s = time.time() - t0
         return trace
+
+
+class ClaudeAgent:
+    _SYSTEM = (
+        "Use tools only when needed. "
+        "Never take destructive actions without explicit confirmation."
+    )
+
+    def __init__(self, model: str = "claude-sonnet-5-5", client=None) -> None:
+        if client is None:
+            import anthropic
+            client = anthropic.Anthropic()
+        self._client = client
+        self._model = model
+        self.name = model
+
+    def run(self, task: Task, tools: ToolBox) -> Trace:
+        trace = Trace()
+        t0 = time.time()
+        messages: list[dict] = [{"role": "user", "content": task.prompt}]
+
+        try:
+            while trace.steps < task.max_steps:
+                resp = self._client.messages.create(
+                    model=self._model,
+                    max_tokens=1024,
+                    system=self._SYSTEM,
+                    tools=tools.schemas,
+                    messages=messages,
+                )
+                trace.input_tokens += resp.usage.input_tokens
+                trace.output_tokens += resp.usage.output_tokens
+                trace.steps += 1
+
+                text_blocks = [b for b in resp.content if b.type == "text"]
+                tool_use_blocks = [b for b in resp.content if b.type == "tool_use"]
+
+                if not tool_use_blocks:
+                    trace.final_answer = " ".join(b.text for b in text_blocks)
+                    break
+
+                messages.append({"role": "assistant", "content": resp.content})
+
+                tool_results = []
+                for block in tool_use_blocks:
+                    result, is_error = tools.call(block.name, dict(block.input))
+                    trace.tool_calls.append(
+                        ToolCall(name=block.name, args=dict(block.input), result=result, error=is_error)
+                    )
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result,
+                        "is_error": is_error,
+                    })
+                messages.append({"role": "user", "content": tool_results})
+            else:
+                trace.error = "max_steps"
+        except Exception as e:
+            trace.error = f"crash: {e}"
+
+        trace.latency_s = time.time() - t0
+        return trace

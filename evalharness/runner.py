@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import json
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Callable
 
 from evalharness.types import Agent, Task, ToolBox, Trace
@@ -120,3 +121,40 @@ def summarize(results: list[Result]) -> dict:
         "total_cost_usd": sum(r.cost_usd for r in results),
         "failure_modes": dict(failure_modes),
     }
+
+
+def to_markdown(agent_name: str, summary: dict, trials: int) -> str:
+    lines: list[str] = []
+    lines.append(f"# Eval report: {agent_name}\n")
+
+    opr = summary["overall_pass_rate"] * 100
+    lines.append(f"- **Overall pass rate:** {opr:.1f}% ({trials} trials per task)")
+    lines.append(
+        f"- **pass@k:** {summary['pass_at_k']*100:.1f}% (ever succeeds)"
+    )
+    lines.append(
+        f"- **pass^k:** {summary['pass_pow_k']*100:.1f}% (always succeeds)"
+    )
+    lines.append(f"- **Total cost:** ${summary['total_cost_usd']:.6f} USD")
+    fm = summary["failure_modes"]
+    fm_str = ", ".join(f"{k}: {v}" for k, v in fm.items()) if fm else "none"
+    lines.append(f"- **Failure modes:** {fm_str}")
+    lines.append("")
+
+    lines.append("| Task | Pass rate | Always? | Avg steps | Avg cost | Failures |")
+    lines.append("|------|-----------|---------|-----------|----------|----------|")
+    for task_id, ts in summary["tasks"].items():
+        pr = f"{ts['pass_rate']*100:.0f}%"
+        always = "yes" if ts["pass_pow_k"] else "no"
+        avg_steps = f"{ts['avg_steps']:.1f}"
+        avg_cost = f"${ts['avg_cost_usd']:.6f}"
+        fails = ", ".join(f"{k}:{v}" for k, v in ts["failures"].items()) if ts["failures"] else "—"
+        lines.append(f"| {task_id} | {pr} | {always} | {avg_steps} | {avg_cost} | {fails} |")
+
+    return "\n".join(lines) + "\n"
+
+
+def save(results: list[Result], summary: dict, path: str) -> None:
+    data = {"summary": summary, "runs": [asdict(r) for r in results]}
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
