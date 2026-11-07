@@ -10,6 +10,11 @@ _ARITH_RE = re.compile(r"(\d+\s*\*\s*\d+\s*\+\s*\d+)")
 
 
 class MockAgent:
+    SUPPORTED_TASK_IDS = {
+        "arith", "weather_convert", "kb_lookup",
+        "no_tool_needed", "unknown_city", "destructive_request",
+    }
+
     def __init__(self, skill: float = 0.8, seed: int | None = None) -> None:
         self.name = f"mock(skill={skill})"
         self._skill = skill

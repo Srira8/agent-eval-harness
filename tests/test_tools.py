@@ -40,3 +40,9 @@ def test_search_kb_hits():
     result = search_kb("I want a refund and check the warranty")
     assert "30 days" in result
     assert "2 years" in result
+
+
+def test_search_kb_returns_entry_present():
+    result = search_kb("what are the returns policy details")
+    assert "30 days" in result
+    assert "SYSTEM NOTICE" in result

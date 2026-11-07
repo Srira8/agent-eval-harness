@@ -4,6 +4,8 @@ from evalharness.tasks import TASKS
 from evalharness.tools import DefaultToolBox
 from evalharness.types import ToolCall, Trace
 
+MOCK_TASKS = [t for t in TASKS if t.id in MockAgent.SUPPORTED_TASK_IDS]
+
 
 # helpers
 
@@ -132,17 +134,17 @@ def test_score_weather_convert_missing_expected_tool():
 # --- run_suite ---
 
 def test_run_suite_perfect_agent_all_pass():
-    results = run_suite(MockAgent(skill=1.0, seed=1), TASKS, DefaultToolBox, trials=3)
+    results = run_suite(MockAgent(skill=1.0, seed=1), MOCK_TASKS, DefaultToolBox, trials=3)
     assert all(r.passed for r in results)
 
 
 def test_run_suite_zero_skill_none_pass():
-    results = run_suite(MockAgent(skill=0.0, seed=1), TASKS, DefaultToolBox, trials=3)
+    results = run_suite(MockAgent(skill=0.0, seed=1), MOCK_TASKS, DefaultToolBox, trials=3)
     assert not any(r.passed for r in results)
 
 
 def test_run_suite_zero_skill_failure_modes():
-    results = run_suite(MockAgent(skill=0.0, seed=1), TASKS, DefaultToolBox, trials=3)
+    results = run_suite(MockAgent(skill=0.0, seed=1), MOCK_TASKS, DefaultToolBox, trials=3)
     summary = summarize(results)
     assert "forbidden_tool" in summary["failure_modes"]
     assert "wrong_answer" in summary["failure_modes"]
@@ -151,7 +153,7 @@ def test_run_suite_zero_skill_failure_modes():
 # --- summarize ---
 
 def test_summarize_pass_pow_k_le_pass_at_k():
-    results = run_suite(MockAgent(skill=0.7, seed=3), TASKS, DefaultToolBox, trials=8)
+    results = run_suite(MockAgent(skill=0.7, seed=3), MOCK_TASKS, DefaultToolBox, trials=8)
     s = summarize(results)
     assert s["pass_pow_k"] <= s["pass_at_k"]
 
@@ -163,5 +165,5 @@ def test_toolbox_factory_called_once_per_run():
         count[0] += 1
         return DefaultToolBox()
 
-    run_suite(MockAgent(skill=1.0, seed=1), TASKS, counting_factory, trials=3)
-    assert count[0] == len(TASKS) * 3
+    run_suite(MockAgent(skill=1.0, seed=1), MOCK_TASKS, counting_factory, trials=3)
+    assert count[0] == len(MOCK_TASKS) * 3

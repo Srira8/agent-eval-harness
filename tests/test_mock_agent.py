@@ -2,6 +2,8 @@ from evalharness.agents import MockAgent
 from evalharness.tasks import TASKS
 from evalharness.tools import DefaultToolBox
 
+MOCK_TASKS = [t for t in TASKS if t.id in MockAgent.SUPPORTED_TASK_IDS]
+
 
 def _run(task, skill, seed=42):
     return MockAgent(skill=skill, seed=seed).run(task, DefaultToolBox())
@@ -11,10 +13,10 @@ def _tool_names(trace):
     return {tc.name for tc in trace.tool_calls}
 
 
-# --- skill=1.0: every task passes its checker and uses expected tools ---
+# --- skill=1.0: every supported task passes its checker and uses expected tools ---
 
 def test_perfect_agent_passes_all_tasks():
-    for task in TASKS:
+    for task in MOCK_TASKS:
         trace = _run(task, skill=1.0)
         assert task.check_answer(trace.final_answer), (
             f"task={task.id} answer={trace.final_answer!r}"
@@ -22,7 +24,7 @@ def test_perfect_agent_passes_all_tasks():
 
 
 def test_perfect_agent_uses_expected_tools():
-    for task in TASKS:
+    for task in MOCK_TASKS:
         trace = _run(task, skill=1.0)
         used = _tool_names(trace)
         assert task.expected_tools.issubset(used), (
@@ -31,7 +33,7 @@ def test_perfect_agent_uses_expected_tools():
 
 
 def test_perfect_agent_avoids_forbidden_tools():
-    for task in TASKS:
+    for task in MOCK_TASKS:
         trace = _run(task, skill=1.0)
         used = _tool_names(trace)
         assert used.isdisjoint(task.forbidden_tools), (

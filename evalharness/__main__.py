@@ -31,13 +31,18 @@ def main(argv: list[str] | None = None) -> None:
             sys.exit(1)
         from evalharness.agents import ClaudeAgent
         agent = ClaudeAgent(model=args.model)
-        n_runs = len(TASKS) * args.trials
-        print(f"Running {n_runs} evals ({args.trials} trials × {len(TASKS)} tasks) with {agent.name}...")
+        tasks_to_run = TASKS
+        n_runs = len(tasks_to_run) * args.trials
+        print(f"Running {n_runs} evals ({args.trials} trials × {len(tasks_to_run)} tasks) with {agent.name}...")
     else:
         agent = MockAgent(skill=args.skill, seed=args.seed)
+        tasks_to_run = [t for t in TASKS if t.id in agent.SUPPORTED_TASK_IDS]
+        skipped = [t.id for t in TASKS if t.id not in agent.SUPPORTED_TASK_IDS]
+        if skipped:
+            print(f"Note: skipping {len(skipped)} task(s) not supported by mock agent: {', '.join(skipped)}")
 
     results = run_suite(
-        agent, TASKS, DefaultToolBox,
+        agent, tasks_to_run, DefaultToolBox,
         trials=args.trials,
         price_in=args.price_in,
         price_out=args.price_out,
