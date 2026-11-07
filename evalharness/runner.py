@@ -15,6 +15,7 @@ class Result:
     passed: bool
     failure: str | None
     tool_recall: float
+    preferred_recall: float
     steps: int
     tokens: int
     cost_usd: float
@@ -28,6 +29,12 @@ def score(task: Task, trace: Trace, price_in: float, price_out: float, trial: in
     tool_recall = (
         len(used & task.expected_tools) / len(task.expected_tools)
         if task.expected_tools
+        else 1.0
+    )
+
+    preferred_recall = (
+        len(used & task.preferred_tools) / len(task.preferred_tools)
+        if task.preferred_tools
         else 1.0
     )
 
@@ -52,6 +59,7 @@ def score(task: Task, trace: Trace, price_in: float, price_out: float, trial: in
         passed=failure is None,
         failure=failure,
         tool_recall=tool_recall,
+        preferred_recall=preferred_recall,
         steps=trace.steps,
         tokens=tokens,
         cost_usd=cost_usd,
@@ -110,6 +118,7 @@ def summarize(results: list[Result]) -> dict:
             "failures": dict(failures),
             "avg_steps": sum(r.steps for r in task_results) / n,
             "avg_cost_usd": sum(r.cost_usd for r in task_results) / n,
+            "avg_preferred_recall": sum(r.preferred_recall for r in task_results) / n,
         }
 
     num_tasks = len(by_task)
@@ -141,15 +150,16 @@ def to_markdown(agent_name: str, summary: dict, trials: int) -> str:
     lines.append(f"- **Failure modes:** {fm_str}")
     lines.append("")
 
-    lines.append("| Task | Pass rate | Always? | Avg steps | Avg cost | Failures |")
-    lines.append("|------|-----------|---------|-----------|----------|----------|")
+    lines.append("| Task | Pass rate | Always? | Avg steps | Avg cost | Preferred tools | Failures |")
+    lines.append("|------|-----------|---------|-----------|----------|-----------------|----------|")
     for task_id, ts in summary["tasks"].items():
         pr = f"{ts['pass_rate']*100:.0f}%"
         always = "yes" if ts["pass_pow_k"] else "no"
         avg_steps = f"{ts['avg_steps']:.1f}"
         avg_cost = f"${ts['avg_cost_usd']:.6f}"
+        pref = f"{ts['avg_preferred_recall']*100:.0f}%"
         fails = ", ".join(f"{k}:{v}" for k, v in ts["failures"].items()) if ts["failures"] else "—"
-        lines.append(f"| {task_id} | {pr} | {always} | {avg_steps} | {avg_cost} | {fails} |")
+        lines.append(f"| {task_id} | {pr} | {always} | {avg_steps} | {avg_cost} | {pref} | {fails} |")
 
     return "\n".join(lines) + "\n"
 

@@ -30,6 +30,7 @@ class Task:
     prompt: str
     check_answer: Callable[[str], bool]
     expected_tools: set[str] = field(default_factory=set)
+    preferred_tools: set[str] = field(default_factory=set)
     forbidden_tools: set[str] = field(default_factory=set)
     max_steps: int = 6
 

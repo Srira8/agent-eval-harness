@@ -64,7 +64,8 @@ TASKS: list[Task] = [
         id="weather_convert",
         prompt="It's currently warm in Seattle. What's the temperature there in Fahrenheit? (F = C*9/5 + 32)",
         check_answer=check_weather_convert,
-        expected_tools={"get_weather", "calculator"},
+        expected_tools={"get_weather"},
+        preferred_tools={"calculator"},
     ),
     Task(
         id="kb_lookup",

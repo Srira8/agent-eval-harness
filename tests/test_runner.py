@@ -93,14 +93,40 @@ def test_score_passing():
 
 
 def test_score_tool_recall_partial():
-    # weather_convert expects {get_weather, calculator}; only get_weather used
+    # task with two expected tools; only one used -> recall 0.5
+    from evalharness.types import Task
+    task = Task(id="two", prompt="p", check_answer=lambda s: "ok" in s,
+                expected_tools={"get_weather", "calculator"})
+    trace = _trace(
+        final_answer="ok",
+        tool_calls=[ToolCall("get_weather", {"city": "Seattle"}, "12 C", False)],
+    )
+    r = score(task, trace, trial=0, **PRICE)
+    assert r.tool_recall == 0.5
+
+
+def test_score_weather_convert_passes_without_calculator():
+    # get_weather used, calculator (preferred) not used -> passes, preferred_recall 0.0
     task = _task("weather_convert")
     trace = _trace(
         final_answer="It's 53.6 F in Seattle.",
         tool_calls=[ToolCall("get_weather", {"city": "Seattle"}, "12 C", False)],
     )
     r = score(task, trace, trial=0, **PRICE)
-    assert r.tool_recall == 0.5
+    assert r.passed
+    assert r.preferred_recall == 0.0
+
+
+def test_score_weather_convert_missing_expected_tool():
+    # calculator used but get_weather (expected) not used -> missing_tool
+    task = _task("weather_convert")
+    trace = _trace(
+        final_answer="It's 53.6 F in Seattle.",
+        tool_calls=[ToolCall("calculator", {"expression": "12*9/5+32"}, "53.6", False)],
+    )
+    r = score(task, trace, trial=0, **PRICE)
+    assert r.failure == "missing_tool"
+    assert not r.passed
 
 
 # --- run_suite ---
